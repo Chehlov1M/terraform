@@ -45,12 +45,12 @@ Terraform автоматически загружает переменные и�
 Ошибка 1: отсутствует имя (label) у ресурса docker_image
 
 Исходный код:
-
+```
 resource "docker_image" {
-  name         = "nginx:latest"
+  name = "nginx:latest"
   keep_locally = true
 }
-
+```
 Объяснение: объявление ресурса в Terraform требует два строковых аргумента — тип и имя (label). Без имени Terraform не может создать ссылку на ресурс (docker_image.nginx).
 
 Исправление:
