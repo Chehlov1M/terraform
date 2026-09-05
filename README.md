@@ -54,53 +54,53 @@ resource "docker_image" {
 Объяснение: объявление ресурса в Terraform требует два строковых аргумента — тип и имя (label). Без имени Terraform не может создать ссылку на ресурс (docker_image.nginx).
 
 Исправление:
-
+```
 resource "docker_image" "nginx" {
   name         = "nginx:latest"
   keep_locally = true
 }
-
+```
 Ошибка 2: имя ресурса docker_container начинается с цифры
 
 Исходный код:
-
+```
 resource "docker_container" "1nginx" {
-
+```
 Объяснение: имена ресурсов в Terraform должны начинаться с буквы или символа подчёркивания. Имя 1nginx нарушает это правило.
 
 Исправление:
-
+```
 resource "docker_container" "nginx" {
-
+```
 Ошибка 3: неверная ссылка на результат random_password
 
 Исходный код:
-
+```
 name = "example_${random_password.random_string_FAKE.resulT}"
-
+```
 Объяснение: две ошибки в одной ссылке:
 
     ресурс объявлен как random_password "random_string", а не random_string_FAKE;
     атрибут называется result (в нижнем регистре), а не resulT.
 
 Исправление:
-
+```
 name = "example_${random_password.random_string.result}"
-
+```
 Дополнительно: атрибут image_id недоступен в версии 2.18.0
 
 Исходный код:
-
+```
 image = docker_image.nginx.image_id
-
+```
 Объяснение: в версии провайдера kreuzwerker/docker 2.18.0 у ресурса docker_image нет экспортируемого атрибута image_id — Terraform выдаёт ошибку Unsupported attribute. Атрибут image_id появился в более поздних версиях провайдера (начиная с 2.21.0).
 
 Исправление: указать имя образа напрямую:
-
+```
 image = "nginx:latest"
-
+```
 Исправленный фрагмент кода
-
+```
 resource "docker_image" "nginx" {
   name         = "nginx:latest"
   keep_locally = true
@@ -115,6 +115,7 @@ resource "docker_container" "nginx" {
     external = 9090
   }
 }
+```
 
 
 
