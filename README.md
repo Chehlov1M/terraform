@@ -117,7 +117,34 @@ resource "docker_container" "nginx" {
 }
 ```
 
+#### Ответ на вопрос №6: 
+Ответ: опасность ключа -auto-approve
 
+Ключ -auto-approve пропускает интерактивное подтверждение «yes/no» перед применением изменений. Terraform сразу выполняет apply, не дожидаясь одобрения пользователя.
 
+При ручной работе это опасно: если в коде допущена ошибка или план содержит нежелательные действия (удаление ресурса, замена контейнера, изменение конфигурации), изменения применяются мгновенно — без возможности проверить план и отменить.
 
+Зачем нужен этот ключ 
 
+В автоматизированных CI/CD-пайплайнах (GitLab CI, GitHub Actions, Jenkins), где ручное подтверждение невозможно или нежелательно. Pipeline должен проходить без остановки и ожидания вмешательства человека — именно для таких сценариев предназначен -auto-approve.
+
+#### Ответ на вопрос №8: 
+Ответ: ответ из кода
+
+В ресурсе docker_image в файле main.tf указан атрибут:
+```
+resource "docker_image" "nginx" {
+  name         = "nginx:latest"
+  keep_locally = true
+}
+```
+keep_locally = true прямо указывает Terraform не удалять образ при уничтожении ресурсов.
+Подтверждение из документации провайдера
+
+Из документации ресурса docker_image провайдера kreuzwerker/docker:
+
+    keep_locally (Boolean) — If true, then the Docker image won't be deleted on destroy operation. If this is false, it will delete the image from the docker local storage on destroy operation.
+
+Источник: https://github.com/kreuzwerker/terraform-provider-docker/blob/master/docs/resources/image.md?ysclid=mtob1lsl23439667542
+
+Именно keep_locally = true в коде гарантирует, что образ nginx:latest остаётся на диске даже после terraform destroy.
