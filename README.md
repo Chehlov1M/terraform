@@ -5,6 +5,12 @@
 `terraform init` прошёл успешно с использованием локального зеркала провайдеров (`~/tf-mirror`).  
 Сгенерированный пароль: `mefRFG8OMEMDCvt4` (получен из `random_password.random_string.result`).
 
+![nginx](terraform_version.png)
+
+![nginx](terraform_init.png)
+
+
+
 ### 2. Запуск контейнера
 
 После раскомментирования и исправления ошибок был создан контейнер на базе образа `nginx:latest`.  
