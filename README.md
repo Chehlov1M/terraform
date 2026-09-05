@@ -30,25 +30,93 @@
 | Образ | `nginx:latest` |
 | `keep_locally` | `true` |
 
-### 3. Скриншоты (в репозитории)
 
-- Вывод `terraform apply` (успешное создание).
-- Вывод `docker ps` (контейнер `hello_world`, порт `9090`).
-- Вывод `terraform destroy` и пустой `docker ps`.
-- `terraform.tfstate` после уничтожения (пустой массив `resources`).
+### 3. Ответы на вопросы
 
-### 4. Ответы на вопросы
+Ответ на вопрос №2: 
+Ответ: файл personal.auto.tfvars.
 
-**Почему образ не удаляется при `terraform destroy`?**  
-Потому что в ресурсе `docker_image` указано `keep_locally = true`.  
-Согласно документации провайдера `kreuzwerker/docker`, это предотвращает удаление образа из локального хранилища Docker.
+Этот файл явно указан в .gitignore и не попадает под общие шаблоны исключений (.terraform/*, *.tfstate). Именно в нём допустимо сохранять личную секретную информацию — логины, пароли, ключи, токены.
 
-**Зачем нужен `-auto-approve`?**  
-Ключ `-auto-approve` отключает интерактивное подтверждение плана. Это удобно для автоматизации (CI/CD), но опасно при ручном использовании, так как любые изменения применяются без возможности проверить план.
+Terraform автоматически загружает переменные из всех файлов с суффиксом .auto.tfvars, поэтому значения из personal.auto.tfvars подхватываются без явного указания флага -var-file. Поскольку файл исключён из Git, секреты не попадут в репозиторий.
 
-### 5. Артефакты в репозитории
+Ответ на вопрос №4: 
+Ответ: после раскомментирования блока (строки 29–42) и выполнения terraform validate Terraform сообщает о следующих намеренно допущенных ошибках.
+Ошибка 1: отсутствует имя (label) у ресурса docker_image
 
-- `main.tf` — исправленная конфигурация.
-- `.gitignore` — исключения для секретов и state-файлов.
-- `REPORT.md` — настоящий отчёт.
-- Скриншоты — в папке `screenshots/`.
+Исходный код:
+
+resource "docker_image" {
+  name         = "nginx:latest"
+  keep_locally = true
+}
+
+Объяснение: объявление ресурса в Terraform требует два строковых аргумента — тип и имя (label). Без имени Terraform не может создать ссылку на ресурс (docker_image.nginx).
+
+Исправление:
+
+resource "docker_image" "nginx" {
+  name         = "nginx:latest"
+  keep_locally = true
+}
+
+Ошибка 2: имя ресурса docker_container начинается с цифры
+
+Исходный код:
+
+resource "docker_container" "1nginx" {
+
+Объяснение: имена ресурсов в Terraform должны начинаться с буквы или символа подчёркивания. Имя 1nginx нарушает это правило.
+
+Исправление:
+
+resource "docker_container" "nginx" {
+
+Ошибка 3: неверная ссылка на результат random_password
+
+Исходный код:
+
+name = "example_${random_password.random_string_FAKE.resulT}"
+
+Объяснение: две ошибки в одной ссылке:
+
+    ресурс объявлен как random_password "random_string", а не random_string_FAKE;
+    атрибут называется result (в нижнем регистре), а не resulT.
+
+Исправление:
+
+name = "example_${random_password.random_string.result}"
+
+Дополнительно: атрибут image_id недоступен в версии 2.18.0
+
+Исходный код:
+
+image = docker_image.nginx.image_id
+
+Объяснение: в версии провайдера kreuzwerker/docker 2.18.0 у ресурса docker_image нет экспортируемого атрибута image_id — Terraform выдаёт ошибку Unsupported attribute. Атрибут image_id появился в более поздних версиях провайдера (начиная с 2.21.0).
+
+Исправление: указать имя образа напрямую:
+
+image = "nginx:latest"
+
+Исправленный фрагмент кода
+
+resource "docker_image" "nginx" {
+  name         = "nginx:latest"
+  keep_locally = true
+}
+
+resource "docker_container" "nginx" {
+  image = "nginx:latest"
+  name  = "example_${random_password.random_string.result}"
+
+  ports {
+    internal = 80
+    external = 9090
+  }
+}
+
+
+
+
+
